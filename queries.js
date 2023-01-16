@@ -4,6 +4,7 @@ const { parse } = require("json2csv");
 const fs = require("fs");
 const Chat = require("./models/chat");
 const Chat_Message = require("./models/chat_messages");
+const { sendEmail } = require("./mailer");
 
 const user_id = "635a5c7182cf0b92a40788b5";
 const nowDate = new Date();
@@ -111,10 +112,6 @@ async function fetchChatsPerDay(userId) {
     const chats = await Chat.find(
       {
         user_id: userId,
-        created_at: {
-          $gte: startDate,
-          $lt: endDate,
-        },
       },
       {
         _id: 0,
@@ -377,6 +374,7 @@ async function createCSV() {
       "SELECT * FROM temp_user_sessions WHERE user_id = $1 AND created_at >= $2 AND created_at < $3",
       [user_id, todaysDate, nextDayDate]
     );
+
     userSessionData = userSessionData.rows;
     for (let i = 0; i < ticketsData.length; i++) {
       if (ticketsData[i]["first_assigned_at"])
@@ -460,9 +458,10 @@ async function createCSV() {
   }
 }
 
-createCSV();
-
 async function getReportData() {
+  // creating all the csv reports
+  await createCSV();
+
   const chatsPerDay = await fetchChatsPerDayCount(user_id);
   const closedTickets = await fetchClosedTicketsByBot(user_id);
   const botAutomation = await fetchBotAutomation(user_id);
@@ -486,18 +485,24 @@ async function getReportData() {
     closed_tickets_agent_count: closedTickets.closedTicketsAgentCount,
     bot_automation_rate: botAutomation,
     count_of_customers_rated_us: countOfCustomersRatedUs,
-    rating,
+    bot_positive_rating: rating.bot_positive_rating,
+    bot_neutral_rating: rating.bot_neutral_rating,
+    bot_negative_rating: rating.bot_negative_rating,
+    agent_positive_rating: rating.agent_positive_rating,
+    agent_neutral_rating: rating.agent_neutral_rating,
+    agent_negative_rating: rating.agent_negative_rating,
     chat_bot_user_intent,
     chats_handed_to_agent_frt_not_null,
     avg_frt,
     avg_rt,
-    rt_for_work_hours,
-    frt_for_work_hours,
+    // rt_for_work_hours,
+    // frt_for_work_hours,
     avg_frt_work_hours,
     avg_rt_work_hours,
   };
 
-  // console.log(report);
+  sendEmail(report);
+  console.log(report);
 }
 
 module.exports = { getReportData };
