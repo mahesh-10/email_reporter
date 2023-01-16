@@ -2,15 +2,15 @@ const Pool = require("pg").Pool;
 const mongoose = require("mongoose");
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "little_joys",
-  password: "1234",
-  port: 5432,
+  user: process.env.PGSQL_USERNAME,
+  host: process.env.PGSQL_HOST,
+  database: process.env.PGSQL_DB_NAME,
+  password: process.env.PGSQL_PWD,
+  port: process.env.PGSQL_PORT,
 });
 
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb://localhost:27017/tellephant", {
+mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
 });
 

@@ -3,3 +3,4 @@ chats.csv
 messages.csv
 user_session.csv
 tickets.csv
+.env

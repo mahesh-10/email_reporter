@@ -23,7 +23,7 @@ let nextDayDate =
   nowDate.getDate() +
   " 00:00:00+00";
 
-console.log("NextdayDate : ", nextDayDate, "Todays Date : ", todaysDate);
+// console.log("NextdayDate : ", nextDayDate, "Todays Date : ", todaysDate);
 
 let startTime =
   nowDate.getFullYear() +
@@ -72,7 +72,7 @@ function getRatings(ratingArr) {
 async function fetchChatMessages(userId) {
   const startDate = moment().subtract(1, "days").startOf("day").format();
   const endDate = moment().startOf("day").format();
-  console.log("start : ", startDate, endDate);
+  // console.log("start : ", startDate, endDate);
   try {
     const messages = await Chat_Message.find(
       {
@@ -111,10 +111,10 @@ async function fetchChatsPerDay(userId) {
     const chats = await Chat.find(
       {
         user_id: userId,
-        // created_at: {
-        //   $gte: startDate,
-        //   $lt: endDate,
-        // },
+        created_at: {
+          $gte: startDate,
+          $lt: endDate,
+        },
       },
       {
         _id: 0,
@@ -341,13 +341,17 @@ async function getAvgRTForWorkHours(userId) {
 async function createCSV() {
   try {
     const messages = await fetchChatMessages(user_id);
+
     const chats = await fetchChatsPerDay(user_id);
+    if (chats.length) {
+      const chatsCSV = parse(JSON.parse(JSON.stringify(chats)));
+      fs.writeFileSync("./chats.csv", chatsCSV);
+    }
 
-    const chatsCSV = parse(JSON.parse(JSON.stringify(chats)));
-    fs.writeFileSync("./chats.csv", chatsCSV);
-
-    const messageCSV = parse(JSON.parse(JSON.stringify(messages)));
-    fs.writeFileSync("./messages.csv", messageCSV);
+    if (messages.length) {
+      const messageCSV = parse(JSON.parse(JSON.stringify(messages)));
+      fs.writeFileSync("./messages.csv", messageCSV);
+    }
 
     await pool.query(
       "CREATE TEMPORARY TABLE temp_tickets AS SELECT * FROM tickets WHERE user_id = $1",
@@ -443,11 +447,14 @@ async function createCSV() {
       ).format("YYYY-MM-DD hh:mm");
     }
     // console.log(userSessionData);
-    const userSessionCSV = await parse(userSessionData);
-    fs.writeFileSync("./user_session.csv", userSessionCSV);
-
-    const ticketsCSV = await parse(ticketsData);
-    fs.writeFileSync("./tickets.csv", ticketsCSV);
+    if (userSessionData.length) {
+      const userSessionCSV = await parse(userSessionData);
+      fs.writeFileSync("./user_session.csv", userSessionCSV);
+    }
+    if (ticketsData.length) {
+      const ticketsCSV = await parse(ticketsData);
+      fs.writeFileSync("./tickets.csv", ticketsCSV);
+    }
   } catch (err) {
     console.log(err);
   }
